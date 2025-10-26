@@ -31,7 +31,7 @@ def Get_Weather_Data(myTimer: func.TimerRequest) -> None:
     end_date = datetime.now().strftime('%Y-%m-%d')
 
     try:
-        print(f'Python timer trigger function ran at {datetime.now().isoformat()}')
+        logging.info(f'Python timer trigger function ran at {datetime.now().isoformat()}')
         # Setup the Open-Meteo API client with cache and retry on error
         cache_session = requests_cache.CachedSession('.cache', expire_after = -1)
         retry_session = retry(cache_session, retries = 5, backoff_factor = 0.2)
@@ -52,9 +52,9 @@ def Get_Weather_Data(myTimer: func.TimerRequest) -> None:
         # Process first location. Add a for-loop for multiple locations or weather models
         response = responses[0]
 
-        print(f"Coordinates: {response.Latitude()}°N {response.Longitude()}°E")
-        print(f"Elevation: {response.Elevation()} m asl")
-        print(f"Timezone difference to GMT+0: {response.UtcOffsetSeconds()}s")
+        logging.info(f"Coordinates: {response.Latitude()}°N {response.Longitude()}°E")
+        logging.info(f"Elevation: {response.Elevation()} m asl")
+        logging.info(f"Timezone difference to GMT+0: {response.UtcOffsetSeconds()}s")
 
         # Process daily data. The order of variables needs to be the same as requested.
         daily = response.Daily()
@@ -95,11 +95,11 @@ def Get_Weather_Data(myTimer: func.TimerRequest) -> None:
 
         daily_dataframe = pd.DataFrame(data = daily_data)
 
-        return daily_dataframe
+        print(daily_dataframe.head())
     
     except Exception as e:
         logging.error(f"An error occurred: {e}")
 
-print("Function app is running.")
-weather_data = Get_Weather_Data(myTimer=None)
-print(weather_data.head())
+#print("Function app is running.")
+#weather_data = Get_Weather_Data(myTimer=None)
+#print(weather_data.head())
