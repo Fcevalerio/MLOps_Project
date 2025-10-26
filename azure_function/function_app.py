@@ -16,16 +16,20 @@ from retry_requests import retry
 # Custom Libraries
 import openmeteo_requests
 
-start_date = datetime(2020, 1, 1).strftime('%Y-%m-%d')
-end_date = datetime.now().strftime('%Y-%m-%d')
-
 app = func.FunctionApp()
 
 # Timer Triggered Function to Get Historical Weather Data Monthly
 @app.timer_trigger(schedule="0 0 0 1 * * ", arg_name="myTimer", run_on_startup=False,
               use_monitor=False) 
 
-def Get_Weather_Data(start_date = start_date, end_date = end_date) -> None:
+def Get_Weather_Data(myTimer: func.TimerRequest) -> None:
+    
+    logging.info('Running weather data update...')
+
+    # Dynamically compute dates
+    start_date = datetime(2020, 1, 1).strftime('%Y-%m-%d')
+    end_date = datetime.now().strftime('%Y-%m-%d')
+
     try:
         print(f'Python timer trigger function ran at {datetime.now().isoformat()}')
         # Setup the Open-Meteo API client with cache and retry on error
@@ -97,5 +101,5 @@ def Get_Weather_Data(start_date = start_date, end_date = end_date) -> None:
         logging.error(f"An error occurred: {e}")
 
 print("Function app is running.")
-weather_data = Get_Weather_Data(start_date = start_date, end_date = end_date)
+weather_data = Get_Weather_Data(myTimer=None)
 print(weather_data.head())
