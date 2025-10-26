@@ -95,7 +95,7 @@ def Get_Weather_Data(myTimer: func.TimerRequest) -> None:
 
         daily_dataframe = pd.DataFrame(data = daily_data)
 
-        print(daily_dataframe.head())
+        logging.info(f"First 5 rows of data:\n{daily_dataframe.head()}")
     
     except Exception as e:
         logging.error(f"An error occurred: {e}")
