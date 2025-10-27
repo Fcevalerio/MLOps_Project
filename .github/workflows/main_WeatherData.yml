@@ -11,8 +11,8 @@ on:
   workflow_dispatch:
 
 env:
-  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'azure_function' # Path to your Function App folder
-  PYTHON_VERSION: '3.12' # Python version for your app
+  AZURE_FUNCTIONAPP_PACKAGE_PATH: 'azure_function'
+  PYTHON_VERSION: '3.12'
 
 jobs:
   build:
@@ -28,6 +28,10 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ env.PYTHON_VERSION }}
+
+      # Debug: List files to confirm folder exists
+      - name: List repository files
+        run: ls -R
 
       - name: Install dependencies (Function app only)
         run: |
@@ -62,7 +66,7 @@ jobs:
           name: python-app
 
       - name: Unzip artifact
-        run: unzip release.zip
+        run: unzip release.zip -d ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
 
       - name: Login to Azure
         uses: azure/login@v2
@@ -76,4 +80,5 @@ jobs:
         with:
           app-name: 'WeatherData'
           slot-name: 'Production'
-          package: ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
+          package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
+          scm-do-build-during-deployment: true
