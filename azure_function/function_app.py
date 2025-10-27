@@ -2,20 +2,6 @@
 import logging
 import azure.functions as func
 
-# Data Manipulation Libraries
-import numpy as np
-import pandas as pd
-
-# Date Libraries
-from datetime import datetime
-
-# Web Scraping Libraries
-import requests_cache
-from retry_requests import retry
-
-# Custom Libraries
-import openmeteo_requests
-
 app = func.FunctionApp()
 
 # Timer Triggered Function to Get Historical Weather Data Monthly
@@ -23,6 +9,19 @@ app = func.FunctionApp()
               use_monitor=False) 
 
 def Get_Weather_Data(myTimer: func.TimerRequest) -> None:
+    # Data Manipulation Libraries
+    import numpy as np
+    import pandas as pd
+
+    # Date Libraries
+    from datetime import datetime
+
+    # Web Scraping Libraries
+    import requests_cache
+    from retry_requests import retry
+
+    # Custom Libraries
+    import openmeteo_requests
 
     logging.info('Running weather data update...')
 
