@@ -27,7 +27,14 @@ jobs:
         run: az acr login --name $ACR_NAME
 
       - name: Build and push image to ACR
-        run: az acr build --registry $ACR_NAME --image $IMAGE_NAME:latest --file ml_model/Dockerfile ml_model/
+        run: |
+          az acr build \
+            --registry $ACR_NAME \
+            --image $IMAGE_NAME:latest \
+            --file ml_model/Dockerfile \
+            --username ${{ secrets.ACR_USERNAME }} \
+            --password ${{ secrets.ACR_PASSWORD }} \
+            ml_model/
 
       - name: Deploy to Azure Container Instance
         run: |
