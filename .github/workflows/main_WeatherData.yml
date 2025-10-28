@@ -29,23 +29,25 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
-      # Debug: List files to confirm folder exists
+      # Debug - show folder structure
       - name: List repository files
         run: ls -R
 
-      - name: Install dependencies (Function app only)
+      # ✅ Install dependencies into .python_packages instead of venv
+      - name: Install dependencies
         run: |
           cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
-          python -m venv venv
-          source venv/bin/activate && pip install -r requirements.txt
+          mkdir -p .python_packages/lib/site-packages
+          pip install --target=".python_packages/lib/site-packages" -r requirements.txt
 
+      # Zip the package for deployment
       - name: Zip artifact for deployment
         run: |
           cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
           zip -r ../release.zip .
           cd ..
 
-      - name: Upload artifact for deployment job
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: python-app
@@ -74,6 +76,7 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_55FCE805684245E78EBB07DBC193F3AA }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_43DFDAE75D9848C78A0FAAD1AE8846B8 }}
 
+      # ✅ Enable Oryx + remote build so Azure uses the correct runtime
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
         with:
@@ -82,3 +85,4 @@ jobs:
           package: '${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}'
           scm-do-build-during-deployment: true
           enable-oryx-build: true
+          remote-build: true
