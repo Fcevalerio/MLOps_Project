@@ -27,8 +27,7 @@ jobs:
         run: az acr login --name $ACR_NAME
 
       - name: Build and push image to ACR
-        run: |
-          az acr build --registry $ACR_NAME --image $IMAGE_NAME:latest .
+        run: az acr build --registry $ACR_NAME --image $IMAGE_NAME:latest --file ml_model/Dockerfile ml_model/
 
       - name: Deploy to Azure Container Instance
         run: |
@@ -37,8 +36,9 @@ jobs:
             --name ml-model-api \
             --image $ACR_NAME.azurecr.io/$IMAGE_NAME:latest \
             --registry-login-server $ACR_NAME.azurecr.io \
-            --environment-variables \
-              AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }} \
+            --registry-username ${{ secrets.ACR_USERNAME }} \
+            --registry-password ${{ secrets.ACR_PASSWORD }} \
+            --environment-variables AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }} \
             --dns-name-label ml-model-api-${{ github.run_id }} \
             --ports 5000 \
             --location $LOCATION \
