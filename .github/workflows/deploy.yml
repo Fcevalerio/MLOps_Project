@@ -24,7 +24,9 @@ jobs:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Log in to ACR
-        run: az acr login --name $ACR_NAME
+        run: az acr login --name $ACR_NAME \
+             --username ${{ secrets.ACR_USERNAME }} \
+             --password ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and push image to ACR
         run: |
@@ -32,9 +34,12 @@ jobs:
             --registry $ACR_NAME \
             --image $IMAGE_NAME:latest \
             --file ml_model/Dockerfile \
-            --username ${{ secrets.ACR_USERNAME }} \
-            --password ${{ secrets.ACR_PASSWORD }} \
             ml_model/
+
+      - name: Delete existing container (if exists)
+        run: |
+          az container show --resource-group $RESOURCE_GROUP --name ml-model-api && \
+          az container delete --resource-group $RESOURCE_GROUP --name ml-model-api --yes || echo "Container does not exist"
 
       - name: Deploy to Azure Container Instance
         run: |
