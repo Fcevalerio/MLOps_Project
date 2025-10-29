@@ -50,7 +50,7 @@ jobs:
             --registry-username "${{ secrets.ACR_USERNAME }}" \
             --registry-password "${{ secrets.ACR_PASSWORD }}" \
             --environment-variables AZURE_STORAGE_CONNECTION_STRING="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
-            --dns-name-label "fvr-ml-model-api" \   # <-- static DNS label
+            --dns-name-label "fvr-ml-model-api" \
             --ip-address public \
             --ports 5000 \
             --cpu 1 \
