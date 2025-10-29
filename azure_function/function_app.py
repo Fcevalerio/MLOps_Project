@@ -1,5 +1,4 @@
 # Basic Libraries
-import os
 import logging
 import azure.functions as func
 
@@ -229,7 +228,10 @@ def Get_Current_Weather_Data(myTimer: func.TimerRequest) -> None:
 @app.blob_trigger(arg_name="myblob", path="raw-daily-weather-data/{name}",
                   connection="AzureWebJobsStorage")
 def BlobTrigger(myblob: func.InputStream):
+    # Basic Libraries
+    import os
     import requests
+
     logging.info(f"Blob trigger function processed blob: {myblob.name}, size: {myblob.length} bytes")
 
     ML_API_URL = os.getenv('ML_API_URL')
