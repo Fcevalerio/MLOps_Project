@@ -227,8 +227,8 @@ def Get_Current_Weather_Data(myTimer: func.TimerRequest) -> None:
 
 @app.function_name(name="BlobTriggerML")
 @app.blob_trigger(arg_name="myblob", path="raw-daily-weather-data/{name}",
-                  connection=os.getenv('AzureWebJobsStorage'))
-def main(myblob: func.InputStream):
+                  connection="AzureWebJobsStorage")
+def BlobTrigger(myblob: func.InputStream):
     import requests
     logging.info(f"Blob trigger function processed blob: {myblob.name}, size: {myblob.length} bytes")
 
