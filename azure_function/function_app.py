@@ -235,14 +235,15 @@ def BlobTrigger(myblob: func.InputStream):
     logging.info(f"Blob trigger function processed blob: {myblob.name}, size: {myblob.length} bytes")
 
     ML_API_URL = os.getenv('ML_API_URL')
-    try:
-        # Read the blob content
-        blob_content = myblob.read()
 
-        # Send it to your ML API
+    try:
+        # Extract blob name
+        blob_name = myblob.name.split('/')[-1]
+
+        # Send JSON payload to the API
         response = requests.post(
             ML_API_URL,
-            files={"file": (myblob.name, blob_content)}
+            json={"blob_name": blob_name}
         )
 
         logging.info(f"ML API Response: {response.status_code} {response.text}")
