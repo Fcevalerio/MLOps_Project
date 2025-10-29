@@ -223,30 +223,3 @@ def Get_Current_Weather_Data(myTimer: func.TimerRequest) -> None:
     
     except Exception as e:
         logging.error(f"An error occurred: {e}")
-
-@app.function_name(name="BlobTriggerML")
-@app.blob_trigger(arg_name="myblob", path="raw-daily-weather-data",
-                  connection="AzureWebJobsStorage")
-def BlobTrigger(myblob: func.InputStream):
-    # Basic Libraries
-    import os
-    import requests
-
-    logging.info(f"Blob trigger function processed blob: {myblob.name}, size: {myblob.length} bytes")
-
-    ML_API_URL = os.getenv('ML_API_URL')
-
-    try:
-        # Extract blob name
-        blob_name = myblob.name.split('/')[-1]
-
-        # Send JSON payload to the API
-        response = requests.post(
-            ML_API_URL,
-            json={"blob_name": blob_name}
-        )
-
-        logging.info(f"ML API Response: {response.status_code} {response.text}")
-
-    except Exception as e:
-        logging.error(f"Error calling ML API: {e}")
