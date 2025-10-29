@@ -224,29 +224,25 @@ def Get_Current_Weather_Data(myTimer: func.TimerRequest) -> None:
     except Exception as e:
         logging.error(f"An error occurred: {e}")
 
-@app.function_name(name="BlobTriggerML")
-@app.blob_trigger(arg_name="myblob", path="raw-daily-weather-data",
-                  connection="AzureWebJobsStorage")
-def BlobTrigger(myblob: func.InputStream):
-    # Basic Libraries
-    import os
+@app.function_name(name="BlobCreatedEventRelay")
+@app.event_grid_trigger(arg_name="event")
+def BlobCreatedEventRelay(event: func.EventGridEvent):
+    """Relay Event Grid blob created event to Flask API."""
     import requests
-
-    logging.info(f"Blob trigger function processed blob: {myblob.name}, size: {myblob.length} bytes")
-
-    ML_API_URL = 'https://fvr-ml-model-api.canadacentral.azurecontainer.io/process'
-
     try:
-        # Extract blob name
-        blob_name = myblob.name.split('/')[-1]
+        # Extract blob name from event data
+        event_data = event.get_json()
+        blob_url = event_data.get("url", "")
+        blob_name = blob_url.split("/")[-1]
 
-        # Send JSON payload to the API
-        response = requests.post(
-            ML_API_URL,
-            json={"blob_name": blob_name}
-        )
+        logging.info(f"📦 Blob created: {blob_name}")
 
-        logging.info(f"ML API Response: {response.status_code} {response.text}")
+        # Your Flask API endpoint (can be HTTP inside Azure)
+        ML_API_URL = "http://fvr-ml-model-api.canadacentral.azurecontainer.io:5000/process"
+
+        # Send POST request with blob name
+        response = requests.post(ML_API_URL, json={"blob_name": blob_name})
+        logging.info(f"Flask API responded with {response.status_code}: {response.text}")
 
     except Exception as e:
-        logging.error(f"Error calling ML API: {e}")
+        logging.error(f"Error processing Event Grid event: {e}")
