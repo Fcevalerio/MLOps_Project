@@ -49,7 +49,10 @@ jobs:
             --registry-login-server "$ACR_NAME.azurecr.io" \
             --registry-username "${{ secrets.ACR_USERNAME }}" \
             --registry-password "${{ secrets.ACR_PASSWORD }}" \
-            --environment-variables AZURE_STORAGE_CONNECTION_STRING="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+            --environment-variables \
+              AZURE_STORAGE_CONNECTION_STRING="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
+              AZURE_STORAGE_ACCOUNT="${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
+              MLFLOW_EXPERIMENT_NAME="${{ secrets.MLFLOW_EXPERIMENT_NAME }}"
             --dns-name-label "fvr-ml-model-api" \
             --ip-address public \
             --ports 5000 \

@@ -1,5 +1,6 @@
 pandas
 flask
 numpy
+mlflow
 scikit-learn==1.6.1
 azure-storage-blob

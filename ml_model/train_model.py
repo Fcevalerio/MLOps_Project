@@ -24,12 +24,19 @@ from sklearn.svm import SVR
 # Evaluation Metrics
 from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 
+# MLflow for experiment tracking
+import mlflow
+import mlflow.sklearn
+
 # Azure storage config (Replace with your actual connection string for testing)
 connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 model_container_name = "models"
 preprocessor_container_name = "preprocessors"
+experiment_container_name = "experiment-tracking"
 
-#blob_service_client = BlobServiceClient.from_connection_string(connection_string)
+# Configure MLflow tracking
+mlflow.set_tracking_uri(f"wasbs://{experiment_container_name}@{os.getenv('AZURE_STORAGE_ACCOUNT')}.blob.core.windows.net")
+mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "WeatherModelTraining"))
 
 # Auxiliary function to determine season
 def get_season(date):
@@ -99,36 +106,37 @@ def get_next_preprocessor_version(blob_service_client, base_name="preprocessor")
     return f"{base_name}_{next_version:.1f}.pkl"
 
 def retrain_model(data: pd.DataFrame):
+    """Retrain the model, log metrics to MLflow, and save model/preprocessor to Azure Blob Storage with versioning."""
     
-    "Retrain the model and save it to Azure Blob Storage with versioning."
-    
-    # Preprocessing
-    # Creating Month, Day and Season features
+    # FEATURE ENGINEERING
     data['month'] = pd.to_datetime(data['date']).dt.month
     data['day'] = pd.to_datetime(data['date']).dt.day
 
-    data["season"] = pd.cut(data['month'],
+    data["season"] = pd.cut(
+        data['month'],
         bins=[0, 2, 5, 8, 11, 12],
         labels=['Winter', 'Spring', 'Summer', 'Autumn', 'Winter'],
         right=True,
         include_lowest=True,
-        ordered=False)
+        ordered=False
+    )
 
-    #Dropping date column
     data.drop(columns=['date'], inplace=True)
 
-    # Initialize target and feature columns with a Pipeline
+    # DATA PREPROCESSING
     target = 'temperature_2m_mean'
     categorical_cols = ['season']
     numerical_cols = [col for col in data.columns if col not in categorical_cols + [target]]
 
     numerical_pipeline = Pipeline(steps=[
-    ('imputer', SimpleImputer(strategy='mean')),
-    ('scaler', StandardScaler())])
+        ('imputer', SimpleImputer(strategy='mean')),
+        ('scaler', StandardScaler())
+    ])
 
     categorical_pipeline = Pipeline(steps=[
         ('imputer', SimpleImputer(strategy='most_frequent')),
-        ('onehot', OneHotEncoder(handle_unknown='ignore', drop='first'))])
+        ('onehot', OneHotEncoder(handle_unknown='ignore', drop='first'))
+    ])
 
     preprocessor = ColumnTransformer([
         ('num', numerical_pipeline, numerical_cols),
@@ -141,84 +149,83 @@ def retrain_model(data: pd.DataFrame):
     preprocessor.fit(X)
     X = pd.DataFrame(preprocessor.transform(X), columns=preprocessor.get_feature_names_out())
 
-    # Save preprocessor to Azure Blob Storage
+    # SAVE PREPROCESSOR TO BLOB
     blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-
-    # Determine next preprocessor version
     preprocessor_name = get_next_preprocessor_version(blob_service_client)
 
-    # Save preprocessor locally to buffer
     buffer = BytesIO()
     joblib.dump(preprocessor, buffer)
     buffer.seek(0)
 
-    # Upload to blob
     blob_client = blob_service_client.get_blob_client(preprocessor_container_name, preprocessor_name)
     blob_client.upload_blob(buffer, overwrite=True)
 
     print(f"Preprocessor uploaded as {preprocessor_name}")
 
-    #Using split ratio because data is a time series
+    # TRAIN/TEST SPLIT
     ratio = 0.8
-    X_train = X.iloc[:int(len(X)*ratio)]
-    X_test = X.iloc[int(len(X)*ratio):]
-    y_train = y.iloc[:int(len(y)*ratio)]
-    y_test = y.iloc[int(len(y)*ratio):]
-    
-    #Timeseries Split will be used for hyperparameter tuning
+    split_index = int(len(X) * ratio)
+    X_train, X_test = X.iloc[:split_index], X.iloc[split_index:]
+    y_train, y_test = y.iloc[:split_index], y.iloc[split_index:]
+
     cv = TimeSeriesSplit(n_splits=3)
 
-    # Support Vector Regressor Params
     svr_params = {
         'C': [1e1, 1e2, 1e3, 1e4],
         'epsilon': [1.0, 1.2, 1.5, 1.8],
         'gamma': ['scale']
     }
 
-    #Support Vector Regressor
-    svr = SVR(kernel = 'linear')
+    svr = SVR(kernel='linear')
     svr_search = RandomizedSearchCV(
         estimator=svr,
         param_distributions=svr_params,
-        n_iter=15, 
-        scoring='neg_mean_absolute_error', 
-        cv=cv, 
+        n_iter=15,
+        scoring='neg_mean_absolute_error',
+        cv=cv,
         n_jobs=-1,
         random_state=1234,
-        verbose=1)
+        verbose=1
+    )
 
-    svr_search.fit(X_train, y_train)
-    print("Best SVR parameters:", svr_search.best_params_)
+    # MLflow Experiment Tracking
+    with mlflow.start_run():
+        svr_search.fit(X_train, y_train)
+        best_params = svr_search.best_params_
+        mlflow.log_params(best_params)
 
-    svr_pred = svr_search.predict(X_test)
+        svr_pred = svr_search.predict(X_test)
+        rmse = np.sqrt(mean_squared_error(y_test, svr_pred))
+        mae = mean_absolute_error(y_test, svr_pred)
+        mape = mean_absolute_percentage_error(y_test, svr_pred)
 
-    ### Support Vector Regression Metrics
-    rmse = np.sqrt(mean_squared_error(y_test, svr_pred))
-    mae  = mean_absolute_error(y_test, svr_pred)
-    mape = mean_absolute_percentage_error(y_test, svr_pred)
+        print(f"\n Model performance:")
+        print(f"  RMSE : {rmse:,.2f}")
+        print(f"  MAE  : {mae:,.2f}")
+        print(f"  MAPE : {mape * 100:.2f}%")
 
-    print(f"\nSupport Vector Regression performance on Test Set:")
-    print(f"  RMSE : {rmse:,.2f}")
-    print(f"  MAE  : {mae:,.2f}")
-    print(f"  MAPE : {mape * 100:.2f}%")
+        mlflow.log_metrics({"rmse": rmse, "mae": mae, "mape": mape})
 
-    # Final Model Training with all data
-    model = SVR(**svr_search.best_params_)
-    model.fit(X, y)
+        # FINAL MODEL TRAINING
+        model = SVR(**best_params)
+        model.fit(X, y)
 
-    # Connect to blob storage
-    blob_service_client = BlobServiceClient.from_connection_string(connection_string)
-    
-    # Determine next version
-    model_name = get_next_model_version(blob_service_client)
-    
-    # Save model locally to buffer
-    buffer = BytesIO()
-    joblib.dump(model, buffer)
-    buffer.seek(0)
-    
-    # Upload to blob
-    blob_client = blob_service_client.get_blob_client(model_container_name, model_name)
-    blob_client.upload_blob(buffer, overwrite=True)
-    
-    print(f"Model retrained and uploaded as {model_name}")
+        # Save model artifact
+        model_name = get_next_model_version(blob_service_client)
+        buffer = BytesIO()
+        joblib.dump(model, buffer)
+        buffer.seek(0)
+
+        blob_client = blob_service_client.get_blob_client(model_container_name, model_name)
+        blob_client.upload_blob(buffer, overwrite=True)
+        print(f"Model retrained and uploaded as {model_name}")
+
+        # Log preprocessor and model to MLflow
+        mlflow.sklearn.log_model(preprocessor, artifact_path="preprocessor")
+        mlflow.sklearn.log_model(model, artifact_path="model")
+
+        # Add metadata
+        mlflow.set_tag("model_name", model_name)
+        mlflow.set_tag("preprocessor", preprocessor_name)
+
+    print("MLflow run completed and logged successfully!")

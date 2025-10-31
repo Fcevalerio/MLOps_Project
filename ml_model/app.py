@@ -4,7 +4,8 @@ from azure.storage.blob import BlobServiceClient
 from io import BytesIO
 import pandas as pd
 import os
-
+import re
+from datetime import datetime
 from inference import run_inference_on_blob
 from train_model import retrain_model
 from detect_drift import detect_drift
@@ -27,15 +28,16 @@ def process_data():
     try:
         blob_service_client = BlobServiceClient.from_connection_string(connection_string)
         container_client = blob_service_client.get_container_client(blob_container)
+        model_container_client = blob_service_client.get_container_client(models_container)
 
-        # List all blobs and sort by date in filename
+        # List all weather blobs sorted by date in filename
         all_blobs = list_weather_blobs(container_client)
 
         if len(all_blobs) == 0:
             return jsonify({"status": "failed", "error": "No blobs found in container"}), 400
 
         elif len(all_blobs) == 1:
-            # Only one blob exists → skip drift detection, run inference on received blob
+            # Only one blob → run inference
             print("Only one blob in container — running inference on received blob...")
             run_inference_on_blob(received_blob_name)
             return jsonify({
@@ -45,7 +47,7 @@ def process_data():
             }), 200
 
         else:
-            # Two or more blobs → check drift using the latest two
+            # Two or more blobs → check drift using latest two
             latest_blob_name = all_blobs[-1]
             previous_blob_name = all_blobs[-2]
 
@@ -59,16 +61,34 @@ def process_data():
 
             drifted = detect_drift(prev_df, latest_df)
 
-            if drifted:
-                print("Drift detected — Retraining model on latest blob...")
+            # Check latest model version/date
+            existing_models = list(model_container_client.list_blobs())
+            latest_model_blob = None
+            if existing_models:
+                latest_model_blob = sorted(existing_models, key=lambda b: b.name)[-1]
+            
+            retrain_needed = drifted
+            if latest_model_blob:
+                # Compare model vs dataset date from blob name
+                model_date_str = re.search(r'(\d{8})', latest_model_blob.name)
+                dataset_date_str = re.search(r'(\d{8})', latest_blob_name)
+                if model_date_str and dataset_date_str:
+                    model_date = datetime.strptime(model_date_str.group(1), "%Y%m%d")
+                    dataset_date = datetime.strptime(dataset_date_str.group(1), "%Y%m%d")
+                    if model_date >= dataset_date:
+                        retrain_needed = False
+
+            if retrain_needed:
+                print("Retraining model on latest blob...")
                 retrain_model(latest_df)
             else:
-                print("No drift detected — Running inference on received blob...")
+                print("No retraining needed — running inference on received blob...")
                 run_inference_on_blob(received_blob_name)
 
             return jsonify({
                 "status": "success",
                 "drift_detected": drifted,
+                "retrain_executed": retrain_needed,
                 "previous_file": previous_blob_name,
                 "latest_file": latest_blob_name,
                 "inference_blob": received_blob_name
