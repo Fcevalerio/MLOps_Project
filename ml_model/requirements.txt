@@ -9,6 +9,7 @@ joblib
 azure-storage-blob
 
 # MLflow for experiment tracking
+pyodbc
 mlflow
 
 # Data handling and requests

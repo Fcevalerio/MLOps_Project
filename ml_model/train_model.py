@@ -28,11 +28,7 @@ from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_absolu
 import mlflow
 import mlflow.sklearn
 
-# Ensure Azure Blob credentials are available for MLflow
-os.environ["AZURE_STORAGE_ACCOUNT"] = os.getenv("AZURE_STORAGE_ACCOUNT", "")
-os.environ["AZURE_STORAGE_ACCESS_KEY"] = os.getenv("AZURE_STORAGE_ACCESS_KEY", "")
-
-# Azure storage config (Replace with your actual connection string for testing
+# Azure storage config (Replace with your actual connection string for testing)
 account_name = os.getenv("AZURE_STORAGE_ACCOUNT")
 connection_string = os.getenv("AZURE_STORAGE_CONNECTION_STRING")
 model_container_name = "models"
@@ -40,23 +36,15 @@ preprocessor_container_name = "preprocessors"
 experiment_container_name = "experiment-tracking"
 
 # Configure MLflow tracking
-#mlflow.set_tracking_uri(f"wasbs://{experiment_container_name}@{account_name}.blob.core.windows.net")
-#mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "WeatherModelTraining"))
+mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
+experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "WeatherModelTraining")
 
-# Auxiliary function to determine season
-def get_season(date):
-    Y = date.year
-    seasons = {
-        'Winter': (pd.Timestamp(f'{Y}-12-21'), pd.Timestamp(f'{Y+1}-03-20')),
-        'Spring': (pd.Timestamp(f'{Y}-03-21'), pd.Timestamp(f'{Y}-06-20')),
-        'Summer': (pd.Timestamp(f'{Y}-06-21'), pd.Timestamp(f'{Y}-09-22')),
-        'Autumn': (pd.Timestamp(f'{Y}-09-23'), pd.Timestamp(f'{Y}-12-20')),
-    }
-    if seasons['Winter'][0] <= date or date <= seasons['Winter'][1]:
-        return 'Winter'
-    for season, (start, end) in seasons.items():
-        if start <= date <= end:
-            return season
+try:
+    mlflow.set_tracking_uri(mlflow_tracking_uri)
+    mlflow.set_experiment(experiment_name)
+    print(f"MLflow connected to: {mlflow_tracking_uri}")
+except Exception as e:
+    print(f"MLflow connection failed: {e}")
 
 def get_next_model_version(blob_service_client, base_name="weather_model"):
 
@@ -209,7 +197,7 @@ def retrain_model(data: pd.DataFrame):
         print(f"  MAE  : {mae:,.2f}")
         print(f"  MAPE : {mape * 100:.2f}%")
 
-        mlflow.log_metrics({"rmse": rmse, "mae": mae, "mape": mape})
+        mlflow.log_metrics({"rmse": float(rmse),"mae": float(mae),"mape": float(mape)})
 
         # FINAL MODEL TRAINING
         model = SVR(**best_params)

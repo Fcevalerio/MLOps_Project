@@ -60,5 +60,5 @@ jobs:
             --environment-variables \
               AZURE_STORAGE_CONNECTION_STRING="${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" \
               AZURE_STORAGE_ACCOUNT="${{ secrets.AZURE_STORAGE_ACCOUNT }}" \
-              MLFLOW_EXPERIMENT_NAME="${{ secrets.MLFLOW_EXPERIMENT_NAME }}" \
-              AZURE_STORAGE_ACCESS_KEY="${{ secrets.AZURE_STORAGE_ACCESS_KEY }}"
+              MLFLOW_TRACKING_URI="${{ secrets.MLFLOW_TRACKING_URI }}" \
+              MLFLOW_EXPERIMENT_NAME="${{ secrets.MLFLOW_EXPERIMENT_NAME }}"
