@@ -40,8 +40,8 @@ preprocessor_container_name = "preprocessors"
 experiment_container_name = "experiment-tracking"
 
 # Configure MLflow tracking
-mlflow.set_tracking_uri(f"wasbs://{experiment_container_name}@{account_name}.blob.core.windows.net")
-mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "WeatherModelTraining"))
+#mlflow.set_tracking_uri(f"wasbs://{experiment_container_name}@{account_name}.blob.core.windows.net")
+#mlflow.set_experiment(os.getenv("MLFLOW_EXPERIMENT_NAME", "WeatherModelTraining"))
 
 # Auxiliary function to determine season
 def get_season(date):
