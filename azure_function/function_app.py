@@ -226,6 +226,7 @@ def Get_Current_Weather_Data(myTimer: func.TimerRequest) -> None:
 @app.event_grid_trigger(arg_name="event")
 def BlobCreatedEventRelay(event: func.EventGridEvent):
     """Relay Event Grid blob created event to Flask API."""
+    import os
     import requests
     try:
         # Extract blob name from event data
@@ -236,7 +237,7 @@ def BlobCreatedEventRelay(event: func.EventGridEvent):
         logging.info(f"Blob created: {blob_name}")
 
         # Your Flask API endpoint (can be HTTP inside Azure)
-        ML_API_URL = "http://fvr-ml-model-api.canadacentral.azurecontainer.io:5000/process"
+        ML_API_URL = os.getenv("ML_API_URL")
 
         # Send POST request with blob name
         response = requests.post(ML_API_URL, json={"blob_name": blob_name})

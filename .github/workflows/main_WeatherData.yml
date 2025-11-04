@@ -33,7 +33,7 @@ jobs:
       - name: List repository files
         run: ls -R
 
-      # ✅ Install dependencies into .python_packages instead of venv
+      # Install dependencies into .python_packages instead of venv
       - name: Install dependencies
         run: |
           cd ${{ env.AZURE_FUNCTIONAPP_PACKAGE_PATH }}
@@ -76,7 +76,7 @@ jobs:
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_55FCE805684245E78EBB07DBC193F3AA }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_43DFDAE75D9848C78A0FAAD1AE8846B8 }}
 
-      # ✅ Enable Oryx + remote build so Azure uses the correct runtime
+      # Enable Oryx + remote build so Azure uses the correct runtime
       - name: Deploy to Azure Functions
         uses: Azure/functions-action@v1
         with:
@@ -86,3 +86,5 @@ jobs:
           scm-do-build-during-deployment: true
           enable-oryx-build: true
           remote-build: true
+        env:
+          ML_API_URL: ${{ secrets.ML_API_URL }}
