@@ -38,6 +38,22 @@ experiment_container_name = "experiment-tracking"
 # Configure MLflow tracking
 mlflow_tracking_uri = os.getenv("MLFLOW_TRACKING_URI")
 experiment_name = os.getenv("MLFLOW_EXPERIMENT_NAME", "WeatherModelTraining")
+experiment_name = experiment_name + "_SVR"
+
+# Initialize MLflow client
+client = mlflow.tracking.MlflowClient()
+experiment = client.get_experiment_by_name(experiment_name)
+artifact_location = f"wasbs://{experiment_container_name}@{account_name}.blob.core.windows.net"
+
+# Set up MLflow experiment
+if experiment is None:
+    experiment_id = client.create_experiment(
+        experiment_name,
+        artifact_location=artifact_location)
+    print(f"Created new MLflow experiment '{experiment_name}' with artifact store in Azure Blob.")
+else:
+    experiment_id = experiment.experiment_id
+    print(f"Using existing MLflow experiment '{experiment_name}' (ID: {experiment_id})")
 
 try:
     mlflow.set_tracking_uri(mlflow_tracking_uri)

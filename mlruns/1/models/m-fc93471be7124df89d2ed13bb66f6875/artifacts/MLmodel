@@ -1,0 +1,15 @@
+artifact_path: file:C:/Users/fceva/OneDrive/Documentos/MBDS/Term 2/MLOPS Machine Learning
+  Operations/Group Project/mlruns/1/models/m-fc93471be7124df89d2ed13bb66f6875/artifacts
+flavors:
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.2
+mlflow_version: 3.5.1
+model_id: m-fc93471be7124df89d2ed13bb66f6875
+model_size_bytes: 3061
+model_uuid: m-fc93471be7124df89d2ed13bb66f6875
+prompts: null
+run_id: 61972541a84e4de88924dded6af7d5da
+utc_time_created: '2025-11-05 11:44:30.550028'
