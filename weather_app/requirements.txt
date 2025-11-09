@@ -1,0 +1,9 @@
+streamlit
+pandas
+plotly
+scikit-learn
+joblib
+mlflow
+azure-storage-blob
+pyodbc
+sqlalchemy

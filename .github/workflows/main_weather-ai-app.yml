@@ -1,0 +1,84 @@
+# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
+# More GitHub Actions for Azure: https://github.com/Azure/actions
+# More info on Python, GitHub Actions, and Azure App Service: https://aka.ms/python-webapps-actions
+
+name: Build and deploy Python app to Azure Web App - weather-ai-app
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        working-directory: ./weather_app
+        run: |
+          python -m venv antenv
+          source antenv/bin/activate
+          pip install -r requirements.txt
+
+      - name: Upload artifact for deployment
+        uses: actions/upload-artifact@v4
+        with:
+          name: python-app
+          path: |
+            weather_app/
+            !weather_app/antenv/
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: python-app
+
+      - name: Login to Azure
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5F65ADCE4E914D7B87CFB92913318018 }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_C449A1CA966A4947971A482419A5017B }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_80E898FD54074DDBBC90352C9852AA39 }}
+
+      # Add or update environment variables in Azure Web App
+      - name: Configure app settings in Azure
+        uses: azure/appservice-settings@v1
+        with:
+          app-name: 'weather-ai-app'
+          app-settings-json: |
+            [
+              {
+                "name": "MLFLOW_TRACKING_URI",
+                "value": "${{ secrets.MLFLOW_TRACKING_URI }}"
+              },
+              {
+                "name": "AZURE_STORAGE_CONNECTION_STRING",
+                "value": "${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}"
+              }
+            ]
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: 'weather-ai-app'
+          slot-name: 'Production'
+          package: ./weather_app
