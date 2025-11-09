@@ -82,11 +82,19 @@ graph LR
             ACR[(Azure Container Registry)]
             ACI[Azure Container Instance]
         end
+
+        subgraph WebHosting["Web Hosting"]
+            SWA[Static Web App]
+            API[API Management]
+        end
     end
     
     B -->|Deploy Function| AF
-    B -->|Push Image| ACR
-    ACR -->|Deploy| ACI
+    B -->|Push ML API Image| ACR
+    ACR -->|Deploy API| ACI
+    B -->|Deploy Web App| SWA
+    SWA -->|Route Requests| API
+    API -->|Forward to| ACI
 ```
 
 ### ML Training Pipeline
@@ -230,10 +238,10 @@ ML_API_URL="your_api_endpoint"
 ## Project Structure
 
 ```
-├── azure_function/          # Azure Functions app
-│   ├── function_app.py     # Function triggers
+├── azure_function/        # Azure Functions app
+│   ├── function_app.py    # Function triggers
 │   └── requirements.txt
-├── ml_model/               # ML service
+├── ml_model/              # ML service
 │   ├── app.py             # Flask API
 │   ├── train_model.py     # Training pipeline
 │   ├── inference.py       # Model inference
