@@ -204,7 +204,7 @@ try:
     st.subheader(f"Experiment: {chosen_exp}")
 
     # Show only a few key columns if they exist
-    runs_df.columns = [col.replace("_", "").title() for col in runs_df.columns]
+    runs_df.columns = [col.replace("_", " ").title() for col in runs_df.columns]
     cols_to_show = [col for col in ["Run Id", "Metric Rmse", "Metric Mae", "Param C", "Start Time"] if col in runs_df.columns]
     st.dataframe(runs_df[cols_to_show] if cols_to_show else runs_df)
 
