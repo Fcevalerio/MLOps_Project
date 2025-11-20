@@ -29,7 +29,7 @@ An end-to-end machine learning operations system that collects weather data, per
    - Model performance monitoring
    - Historical data analysis
    - Location: [weather_app/](weather_app/)
-   - URL: https://weather-ai-app-deezbtenccb5hefa.canadacentral-01.azurewebsites.net/ (This URL may not work in the future)
+   - URL: https://weather-ai-app-deezbtenccb5hefa.canadacentral-01.azurewebsites.net/
 
 ### Overall System Architecture
 ```mermaid
