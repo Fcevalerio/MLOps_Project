@@ -29,6 +29,7 @@ An end-to-end machine learning operations system that collects weather data, per
    - Model performance monitoring
    - Historical data analysis
    - Location: [weather_app/](weather_app/)
+   - URL: https://weather-ai-app-deezbtenccb5hefa.canadacentral-01.azurewebsites.net/ (This URL may not work in the future)
 
 ### Overall System Architecture
 ```mermaid
@@ -226,6 +227,12 @@ LOCATION="resources_location" # E.g. canadacentral
 
 # API Endpoints
 ML_API_URL="your_api_endpoint"
+
+# Azure Web App
+# Azure Functions
+AZURE_CLIENT_ID="created_automatically_from_azurefunction_deploymentcenter"
+AZURE_TENANT_ID="created_automatically_from_azurefunction_deploymentcenter"
+AZURE_SUBSCRIPTION_ID="created_automatically_from_azurefunction_deploymentcenter"
 ```
 
 ### Local Development
