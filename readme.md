@@ -229,7 +229,6 @@ LOCATION="resources_location" # E.g. canadacentral
 ML_API_URL="your_api_endpoint"
 
 # Azure Web App
-# Azure Functions
 AZURE_CLIENT_ID="created_automatically_from_azurefunction_deploymentcenter"
 AZURE_TENANT_ID="created_automatically_from_azurefunction_deploymentcenter"
 AZURE_SUBSCRIPTION_ID="created_automatically_from_azurefunction_deploymentcenter"
